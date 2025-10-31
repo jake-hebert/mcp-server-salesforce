@@ -12,18 +12,19 @@ import { promisify } from "util";
 const execAsync = promisify(exec);
 
 /**
- * Platform-specific string to suppress stdout/stderr in shell commands
+ * Platform-specific string to suppress stderr in shell commands
  */
-const SUPPRESS_OUTPUT =
-  process.platform === "win32" ? " >nul 2>&1" : " >/dev/null 2>&1";
+const SUPPRESS_STDERR =
+  process.platform === "win32" ? " 2>nul" : " 2>/dev/null";
 
 /**
- * Executes a command with output suppression to prevent MCP protocol interference
+ * Executes a command with stderr suppression to prevent MCP protocol interference
+ * while capturing stdout for parsing
  * @param command The command to execute
  * @returns The command stdout
  */
 async function execSilent(command: string): Promise<string> {
-  const silentCommand = command + SUPPRESS_OUTPUT;
+  const silentCommand = command + SUPPRESS_STDERR;
   console.error(`[CLI] Executing: ${command}`);
 
   const { stdout } = await execAsync(silentCommand, {
@@ -183,7 +184,7 @@ export async function createSalesforceConnection(config?: ConnectionConfig) {
       return conn;
     } else if (connectionType === ConnectionType.Salesforce_CLI) {
       // Salesforce CLI authentication using sf org display
-      console.log(
+      console.error(
         "Connecting to Salesforce using Salesforce CLI authentication"
       );
 
@@ -196,7 +197,7 @@ export async function createSalesforceConnection(config?: ConnectionConfig) {
         accessToken: orgInfo.result.accessToken,
       });
 
-      console.log(
+      console.error(
         `Connected to Salesforce org: ${orgInfo.result.username} (${
           orgInfo.result.alias || "No alias"
         })`
